@@ -2,12 +2,21 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 import sqlite3
 import os
 import json
+import cloudinary
+import cloudinary.uploader
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = 'souk_gold_secret_key_2026'
+
+# Cloudinary config
+cloudinary.config(
+    cloud_name="db4ha64bk",
+    api_key="387117734373392",
+    api_secret="IFqIArZ9TRsBuRzn-pTV3TgTVio"
+)
 
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'webm', 'mov'}
@@ -172,10 +181,14 @@ def add_product():
         saved_files = []
         for file in files:
             if file and allowed_file(file.filename):
-                ext = file.filename.rsplit('.', 1)[1].lower()
-                filename = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{len(saved_files)}.{ext}"
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                saved_files.append(filename)
+                try:
+                    upload_result = cloudinary.uploader.upload(file, folder="souk_djallal")
+                    saved_files.append(upload_result['secure_url'])
+                except:
+                    ext = file.filename.rsplit('.', 1)[1].lower()
+                    filename = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{len(saved_files)}.{ext}"
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    saved_files.append(filename)
 
         if saved_files:
             conn = sqlite3.connect('souk.db')
@@ -313,7 +326,6 @@ def my_orders():
     conn = sqlite3.connect('souk.db')
     c = conn.cursor()
     
-    # الطلبات اللي وصلتني كبائع
     c.execute("""
         SELECT o.*, p.title, p.price FROM orders o
         JOIN products p ON o.product_id = p.id
@@ -322,7 +334,6 @@ def my_orders():
     """, (user_id,))
     seller_orders = c.fetchall()
     
-    # الطلبات اللي عملتها كمشتري
     c.execute("""
         SELECT o.*, p.title, p.price FROM orders o
         JOIN products p ON o.product_id = p.id
@@ -502,4 +513,3 @@ def uploaded_file(filename):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
