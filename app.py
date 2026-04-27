@@ -11,7 +11,6 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = 'souk_gold_secret_key_2026'
 
-# Cloudinary config
 cloudinary.config(
     cloud_name="db4ha64bk",
     api_key="387117734373392",
@@ -22,7 +21,6 @@ UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'webm', 'mov'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
-
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
@@ -31,7 +29,6 @@ def allowed_file(filename):
 def init_db():
     conn = sqlite3.connect('souk.db')
     c = conn.cursor()
-    
     c.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -39,7 +36,6 @@ def init_db():
         password TEXT NOT NULL,
         date TEXT DEFAULT CURRENT_TIMESTAMP
     )''')
-    
     c.execute('''CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
@@ -58,7 +54,6 @@ def init_db():
         date TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
     )''')
-    
     c.execute('''CREATE TABLE IF NOT EXISTS favorites (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -68,7 +63,6 @@ def init_db():
         FOREIGN KEY (product_id) REFERENCES products(id),
         UNIQUE(user_id, product_id)
     )''')
-    
     c.execute('''CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         product_id INTEGER NOT NULL,
@@ -83,7 +77,6 @@ def init_db():
         FOREIGN KEY (product_id) REFERENCES products(id),
         FOREIGN KEY (seller_id) REFERENCES users(id)
     )''')
-    
     conn.commit()
     conn.close()
 
@@ -101,19 +94,15 @@ def login_required(f):
 @app.route('/')
 def index():
     user_id = session.get('user_id', 0)
-    
     city_filter = request.args.get('city', '')
     category_filter = request.args.get('category', '')
     price_min = request.args.get('price_min', '')
     price_max = request.args.get('price_max', '')
     sort = request.args.get('sort', 'newest')
-    
     conn = sqlite3.connect('souk.db')
     c = conn.cursor()
-    
     query = "SELECT * FROM products WHERE 1=1"
     params = []
-    
     if city_filter:
         query += " AND city LIKE ?"
         params.append(f'%{city_filter}%')
@@ -126,20 +115,16 @@ def index():
     if price_max:
         query += " AND CAST(price AS INTEGER) <= ?"
         params.append(int(price_max))
-    
     if sort == 'cheapest':
         query += " ORDER BY CAST(price AS INTEGER) ASC"
     else:
         query += " ORDER BY id DESC"
-    
     c.execute(query, params)
     products = c.fetchall()
-    
     favorites = []
     if user_id > 0:
         c.execute("SELECT product_id FROM favorites WHERE user_id = ?", (user_id,))
         favorites = [row[0] for row in c.fetchall()]
-    
     products_list = []
     for p in products:
         images = json.loads(p[7])
@@ -154,7 +139,6 @@ def index():
             'date': p[14] if len(p) > 14 else '',
             'is_favorite': p[0] in favorites
         })
-    
     conn.close()
     return render_template('index.html', products=products_list, user_id=user_id)
 
@@ -173,23 +157,20 @@ def add_product():
         delivery_available = request.form.get('delivery_available', '0')
         delivery_price_inside = request.form.get('delivery_price_inside', '0')
         delivery_price_outside = request.form.get('delivery_price_outside', '0')
-
         if not files or files[0].filename == '':
             flash('❌ يجب رفع صورة واحدة على الأقل', 'danger')
             return render_template('add.html')
-
         saved_files = []
         for file in files:
             if file and allowed_file(file.filename):
                 try:
-                    upload_result = cloudinary.uploader.upload(file, folder="souk_djallal")
+                    upload_result = cloudinary.uploader.upload(file, folder="souk_djallal", upload_preset="souk_preset")
                     saved_files.append(upload_result['secure_url'])
                 except:
                     ext = file.filename.rsplit('.', 1)[1].lower()
                     filename = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{len(saved_files)}.{ext}"
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     saved_files.append(filename)
-
         if saved_files:
             conn = sqlite3.connect('souk.db')
             c = conn.cursor()
@@ -202,29 +183,22 @@ def add_product():
             return redirect(url_for('index'))
         else:
             flash('❌ خطأ: الصيغ غير مدعومة', 'danger')
-
     return render_template('add.html')
 
 @app.route('/product/<int:id>')
 def product_detail(id):
     conn = sqlite3.connect('souk.db')
     c = conn.cursor()
-    
     c.execute("UPDATE products SET views = views + 1 WHERE id = ?", (id,))
-    
     c.execute("SELECT * FROM products WHERE id = ?", (id,))
     p = c.fetchone()
-    
     user_id = session.get('user_id', 0)
     is_favorite = False
-    
     if user_id > 0 and p:
         c.execute("SELECT id FROM favorites WHERE user_id = ? AND product_id = ?", (user_id, id))
         is_favorite = c.fetchone() is not None
-    
     conn.commit()
     conn.close()
-    
     if p:
         images = json.loads(p[7])
         product = {
@@ -246,30 +220,23 @@ def search():
     city_filter = request.args.get('city', '')
     sort = request.args.get('sort', 'newest')
     user_id = session.get('user_id', 0)
-    
     conn = sqlite3.connect('souk.db')
     c = conn.cursor()
-    
     query = "SELECT * FROM products WHERE (title LIKE ? OR description LIKE ? OR city LIKE ?)"
     params = [f'%{q}%', f'%{q}%', f'%{q}%']
-    
     if city_filter:
         query += " AND city LIKE ?"
         params.append(f'%{city_filter}%')
-    
     if sort == 'cheapest':
         query += " ORDER BY CAST(price AS INTEGER) ASC"
     else:
         query += " ORDER BY id DESC"
-    
     c.execute(query, params)
     products = c.fetchall()
-    
     favorites = []
     if user_id > 0:
         c.execute("SELECT product_id FROM favorites WHERE user_id = ?", (user_id,))
         favorites = [row[0] for row in c.fetchall()]
-    
     products_list = []
     for p in products:
         images = json.loads(p[7])
@@ -279,16 +246,12 @@ def search():
             'images': images, 'first_image': images[0] if images else 'default.jpg',
             'user_id': p[8], 'views': p[9], 'sold': p[10],
             'delivery_available': p[11] if len(p) > 11 else 0,
-            'delivery_price_inside': p[12] if len(p) > 12 else '0',
-            'delivery_price_outside': p[13] if len(p) > 13 else '0',
             'date': p[14] if len(p) > 14 else '',
             'is_favorite': p[0] in favorites
         })
-    
     conn.close()
-    return render_template('index.html', products=products_list, user_id=user_id,
-                           search_query=q, city_filter=city_filter, sort=sort)
-# ========== نظام الطلبات ==========
+    return render_template('index.html', products=products_list, user_id=user_id, search_query=q, city_filter=city_filter, sort=sort)
+
 @app.route('/order/<int:product_id>', methods=['POST'])
 def place_order(product_id):
     buyer_name = request.form['buyer_name']
@@ -296,26 +259,20 @@ def place_order(product_id):
     buyer_address = request.form['buyer_address']
     buyer_city = request.form['buyer_city']
     delivery_price = request.form.get('delivery_price', '0')
-    
     conn = sqlite3.connect('souk.db')
     c = conn.cursor()
     c.execute("SELECT * FROM products WHERE id = ?", (product_id,))
     product = c.fetchone()
-    
     if product:
         seller_id = product[8]
-        
-        c.execute("""INSERT INTO orders (product_id, seller_id, buyer_name, buyer_phone, buyer_address, buyer_city, delivery_price)
-                     VALUES (?,?,?,?,?,?,?)""",
+        c.execute("INSERT INTO orders (product_id, seller_id, buyer_name, buyer_phone, buyer_address, buyer_city, delivery_price) VALUES (?,?,?,?,?,?,?)",
                   (product_id, seller_id, buyer_name, buyer_phone, buyer_address, buyer_city, delivery_price))
         conn.commit()
         conn.close()
-        
-        flash('✅ تم إرسال طلبك بنجاح! سيتواصل معك البائع قريباً', 'success')
+        flash('✅ تم إرسال طلبك بنجاح!', 'success')
     else:
         conn.close()
-        flash('❌ حدث خطأ، المنتج غير موجود', 'danger')
-    
+        flash('❌ حدث خطأ', 'danger')
     return redirect(url_for('product_detail', id=product_id))
 
 @app.route('/orders')
@@ -324,39 +281,23 @@ def my_orders():
     user_id = session.get('user_id', 0)
     conn = sqlite3.connect('souk.db')
     c = conn.cursor()
-    
-    c.execute("""
-        SELECT o.*, p.title, p.price FROM orders o
-        JOIN products p ON o.product_id = p.id
-        WHERE o.seller_id = ?
-        ORDER BY o.id DESC
-    """, (user_id,))
+    c.execute("SELECT o.*, p.title, p.price FROM orders o JOIN products p ON o.product_id = p.id WHERE o.seller_id = ? ORDER BY o.id DESC", (user_id,))
     seller_orders = c.fetchall()
-    
-    c.execute("""
-        SELECT o.*, p.title, p.price FROM orders o
-        JOIN products p ON o.product_id = p.id
-        WHERE o.buyer_phone = (SELECT phone FROM users WHERE id = ?)
-        ORDER BY o.id DESC
-    """, (user_id,))
+    c.execute("SELECT o.*, p.title, p.price FROM orders o JOIN products p ON o.product_id = p.id WHERE o.buyer_phone = (SELECT phone FROM users WHERE id = ?) ORDER BY o.id DESC", (user_id,))
     buyer_orders = c.fetchall()
-    
     conn.close()
     return render_template('orders.html', seller_orders=seller_orders, buyer_orders=buyer_orders)
 
-# ========== نظام المستخدمين ==========
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         phone = request.form['phone']
         password = request.form['password']
-        
         conn = sqlite3.connect('souk.db')
         c = conn.cursor()
         c.execute("SELECT * FROM users WHERE phone = ? AND password = ?", (phone, password))
         user = c.fetchone()
         conn.close()
-        
         if user:
             session['user_id'] = user[0]
             session['user_name'] = user[1]
@@ -364,7 +305,6 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('❌ رقم الهاتف أو كلمة المرور غير صحيحة', 'danger')
-    
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -373,23 +313,18 @@ def register():
         name = request.form['name']
         phone = request.form['phone']
         password = request.form['password']
-        
         conn = sqlite3.connect('souk.db')
         c = conn.cursor()
-        
         c.execute("SELECT id FROM users WHERE phone = ?", (phone,))
         if c.fetchone():
             conn.close()
             flash('❌ رقم الهاتف مسجل من قبل', 'danger')
             return render_template('login.html')
-        
         c.execute("INSERT INTO users (name, phone, password) VALUES (?,?,?)", (name, phone, password))
         conn.commit()
         conn.close()
-        
-        flash('✅ تم التسجيل بنجاح! يمكنك تسجيل الدخول الآن', 'success')
+        flash('✅ تم التسجيل بنجاح!', 'success')
         return redirect(url_for('login'))
-    
     return redirect(url_for('login'))
 
 @app.route('/logout')
@@ -407,7 +342,6 @@ def my_ads():
     c.execute("SELECT * FROM products WHERE user_id = ? ORDER BY id DESC", (user_id,))
     products = c.fetchall()
     conn.close()
-    
     products_list = []
     for p in products:
         images = json.loads(p[7])
@@ -417,11 +351,8 @@ def my_ads():
             'images': images, 'first_image': images[0] if images else 'default.jpg',
             'views': p[9], 'sold': p[10],
             'delivery_available': p[11] if len(p) > 11 else 0,
-            'delivery_price_inside': p[12] if len(p) > 12 else '0',
-            'delivery_price_outside': p[13] if len(p) > 13 else '0',
             'date': p[14] if len(p) > 14 else ''
         })
-    
     return render_template('my_ads.html', products=products_list)
 
 @app.route('/delete_ad/<int:id>')
@@ -454,27 +385,24 @@ def toggle_sold(id):
     conn.close()
     return redirect(url_for('my_ads'))
 
-# ========== المفضلة ==========
 @app.route('/toggle_favorite/<int:product_id>')
 @login_required
 def toggle_favorite(product_id):
     user_id = session.get('user_id', 0)
     conn = sqlite3.connect('souk.db')
     c = conn.cursor()
-    
     c.execute("SELECT id FROM favorites WHERE user_id = ? AND product_id = ?", (user_id, product_id))
     existing = c.fetchone()
-    
     if existing:
         c.execute("DELETE FROM favorites WHERE user_id = ? AND product_id = ?", (user_id, product_id))
         conn.commit()
         conn.close()
-        return {'status': 'removed', 'message': 'تمت إزالة من المفضلة'}
+        return {'status': 'removed'}
     else:
         c.execute("INSERT INTO favorites (user_id, product_id) VALUES (?,?)", (user_id, product_id))
         conn.commit()
         conn.close()
-        return {'status': 'added', 'message': 'تمت إضافة إلى المفضلة'}
+        return {'status': 'added'}
 
 @app.route('/favorites')
 @login_required
@@ -482,15 +410,9 @@ def favorites():
     user_id = session.get('user_id', 0)
     conn = sqlite3.connect('souk.db')
     c = conn.cursor()
-    c.execute("""
-        SELECT p.* FROM products p
-        JOIN favorites f ON p.id = f.product_id
-        WHERE f.user_id = ?
-        ORDER BY f.id DESC
-    """, (user_id,))
+    c.execute("SELECT p.* FROM products p JOIN favorites f ON p.id = f.product_id WHERE f.user_id = ? ORDER BY f.id DESC", (user_id,))
     products = c.fetchall()
     conn.close()
-    
     products_list = []
     for p in products:
         images = json.loads(p[7])
@@ -499,11 +421,9 @@ def favorites():
             'phone': p[4], 'category': p[5], 'city': p[6],
             'images': images, 'first_image': images[0] if images else 'default.jpg',
             'views': p[9], 'sold': p[10],
-            'delivery_available': p[11] if len(p) > 11 else 0,
             'date': p[14] if len(p) > 14 else '',
             'is_favorite': True
         })
-    
     return render_template('index.html', products=products_list, user_id=user_id, is_favorites=True)
 
 @app.route('/uploads/<filename>')
