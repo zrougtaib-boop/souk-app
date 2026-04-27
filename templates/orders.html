@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الطلبات - سوق أولاد جلال</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white">
+
+    <header class="bg-gradient-to-r from-yellow-600 to-yellow-400 py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <a href="/" class="text-black font-bold text-xl"><i class="fas fa-arrow-right ml-2"></i>الرئيسية</a>
+            <h1 class="text-2xl font-bold text-black">الطلبات</h1>
+            <div></div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        
+        <!-- الطلبات الواردة (كـ بائع) -->
+        <h2 class="text-xl font-bold text-yellow-500 mb-4">
+            <i class="fas fa-shopping-cart ml-2"></i>الطلبات الواردة إليك
+        </h2>
+        
+        {% if seller_orders %}
+            {% for order in seller_orders %}
+            <div class="bg-gray-800 rounded-xl p-4 mb-4 border {% if order[7] == 'new' %}border-yellow-500{% else %}border-gray-700{% endif %}">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-bold text-yellow-500">{{ order[8] }}</h3>
+                    <span class="text-xs bg-yellow-600 text-black px-2 py-1 rounded-full">جديد</span>
+                </div>
+                <div class="space-y-1 text-sm text-gray-300">
+                    <p><i class="fas fa-user ml-2 text-yellow-500"></i>المشتري: <strong>{{ order[3] }}</strong></p>
+                    <p><i class="fas fa-phone ml-2 text-yellow-500"></i>الهاتف: <a href="tel:{{ order[4] }}" class="text-green-400">{{ order[4] }}</a></p>
+                    <p><i class="fas fa-map-marker-alt ml-2 text-yellow-500"></i>العنوان: {{ order[5] }} - {{ order[6] }}</p>
+                    <p><i class="fas fa-clock ml-2 text-yellow-500"></i>التاريخ: {{ order[8] if order[8] else order[9] }}</p>
+                </div>
+                <div class="flex gap-2 mt-3">
+                    <a href="tel:{{ order[4] }}" class="flex-1 bg-green-600 text-center py-2 rounded-lg hover:bg-green-500 transition text-sm">
+                        <i class="fas fa-phone ml-1"></i>اتصال
+                    </a>
+                    <a href="https://wa.me/{{ order[4] }}" target="_blank" class="flex-1 bg-green-700 text-center py-2 rounded-lg hover:bg-green-600 transition text-sm">
+                        <i class="fab fa-whatsapp ml-1"></i>واتساب
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-8 text-gray-500 mb-8">
+                <i class="fas fa-inbox text-4xl mb-2"></i>
+                <p>لا توجد طلبات واردة حالياً</p>
+            </div>
+        {% endif %}
+
+        <!-- الطلبات الصادرة (كـ مشتري) -->
+        <h2 class="text-xl font-bold text-yellow-500 mb-4 mt-8">
+            <i class="fas fa-paper-plane ml-2"></i>طلباتي المرسلة
+        </h2>
+        
+        {% if buyer_orders %}
+            {% for order in buyer_orders %}
+            <div class="bg-gray-800 rounded-xl p-4 mb-4 border border-gray-700 opacity-80">
+                <h3 class="text-lg font-bold text-yellow-500 mb-2">{{ order[8] }}</h3>
+                <div class="text-sm text-gray-400">
+                    <p>السعر: {{ order[9] }} دج</p>
+                    <p>تاريخ الطلب: {{ order[8] if order[8] else order[9] }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-paper-plane text-4xl mb-2"></i>
+                <p>لم ترسل أي طلب بعد</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <div class="fixed bottom-0 w-full bg-gray-800 border-t border-yellow-500 py-3 px-4 z-30 md:hidden">
+        <div class="flex justify-around text-center text-sm max-w-sm mx-auto">
+            <a href="/" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-home text-xl block"></i>
+                <span>الرئيسية</span>
+            </a>
+            <a href="/add" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-plus-circle text-xl block"></i>
+                <span>أضف إعلان</span>
+            </a>
+            <a href="/orders" class="text-yellow-500">
+                <i class="fas fa-shopping-cart text-xl block"></i>
+                <span>الطلبات</span>
+            </a>
+            <a href="/my_ads" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-user text-xl block"></i>
+                <span>إعلاناتي</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="h-16 md:h-0"></div>
+</body>
+</html>

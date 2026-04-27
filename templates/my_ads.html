@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعلاناتي - سوق أولاد جلال</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white">
+
+    <header class="bg-gradient-to-r from-yellow-600 to-yellow-400 py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <a href="/" class="text-black font-bold text-xl"><i class="fas fa-arrow-right ml-2"></i>الرئيسية</a>
+            <h1 class="text-2xl font-bold text-black">إعلاناتي</h1>
+            <a href="/add" class="bg-black text-yellow-400 px-4 py-2 rounded-full font-bold text-sm">
+                <i class="fas fa-plus ml-1"></i>إعلان جديد
+            </a>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="p-3 rounded-lg mb-4 text-center {% if category == 'success' %}bg-green-600{% else %}bg-red-600{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if products %}
+            {% for product in products %}
+            <div class="bg-gray-800 rounded-xl overflow-hidden shadow-lg border {% if product.sold == 1 %}border-red-500 opacity-80{% else %}border-gray-700{% endif %} mb-4">
+                <div class="flex flex-col sm:flex-row">
+                    <div class="sm:w-48 h-40 sm:h-auto flex-shrink-0">
+                        <img src="{{ url_for('uploaded_file', filename=product.first_image) }}" class="w-full h-full object-cover" alt="{{ product.title }}">
+                    </div>
+                    <div class="p-4 flex-1">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xl font-bold text-yellow-500 mb-2">{{ product.title[:50] }}</h3>
+                            {% if product.sold == 1 %}
+                            <span class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">تم البيع</span>
+                            {% else %}
+                            <span class="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold">متاح</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-gray-400 text-sm mb-3">{{ product.description[:100] }}...</p>
+                        <div class="flex flex-wrap items-center gap-4 mb-3">
+                            <span class="text-lg font-bold">{{ product.price }} دج</span>
+                            <span class="text-gray-400 text-sm"><i class="fas fa-eye ml-1"></i>{{ product.views }} مشاهدة</span>
+                            <span class="text-gray-400 text-sm"><i class="fas fa-clock ml-1"></i>{{ product.date[:10] if product.date else '' }}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="/product/{{ product.id }}" class="bg-yellow-600 px-4 py-2 rounded-lg hover:bg-yellow-500 transition text-sm">عرض</a>
+                            <a href="/toggle_sold/{{ product.id }}" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-500 transition text-sm">
+                                {% if product.sold == 1 %}إعادة للنشر{% else %}تم البيع{% endif %}
+                            </a>
+                            <a href="/delete_ad/{{ product.id }}" class="bg-red-600 px-4 py-2 rounded-lg hover:bg-red-500 transition text-sm" onclick="return confirm('هل أنت متأكد من حذف هذا الإعلان؟')">
+                                <i class="fas fa-trash ml-1"></i>حذف
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-12 text-gray-400">
+                <i class="fas fa-box-open text-5xl mb-4"></i>
+                <p class="text-xl mb-4">ليس لديك أي إعلانات بعد</p>
+                <a href="/add" class="bg-yellow-500 text-black px-6 py-3 rounded-full font-bold hover:bg-yellow-400 transition inline-block">
+                    <i class="fas fa-plus ml-2"></i>أضف إعلانك الأول
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <div class="fixed bottom-0 w-full bg-gray-800 border-t border-yellow-500 py-3 px-4 z-30 md:hidden">
+        <div class="flex justify-around text-center text-sm max-w-sm mx-auto">
+            <a href="/" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-home text-xl block"></i>
+                <span>الرئيسية</span>
+            </a>
+            <a href="/add" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-plus-circle text-xl block"></i>
+                <span>أضف إعلان</span>
+            </a>
+            <a href="/favorites" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-heart text-xl block"></i>
+                <span>مفضلة</span>
+            </a>
+            <a href="/my_ads" class="text-yellow-500">
+                <i class="fas fa-user text-xl block"></i>
+                <span>إعلاناتي</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="h-16 md:h-0"></div>
+</body>
+</html>

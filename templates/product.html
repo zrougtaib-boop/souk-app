@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.title }} - سوق أولاد جلال</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white">
+
+    <header class="bg-gradient-to-r from-yellow-600 to-yellow-400 py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <a href="/" class="text-black font-bold text-xl"><i class="fas fa-home ml-2"></i>الرئيسية</a>
+            <h1 class="text-2xl font-bold text-black">تفاصيل الإعلان</h1>
+            <div class="flex items-center gap-3">
+                {% if user_id > 0 %}
+                <button onclick="toggleFavoritePage({{ product.id }})" class="text-black text-2xl">
+                    {% if product.is_favorite %}
+                    <i id="fav-icon" class="fas fa-heart text-red-600"></i>
+                    {% else %}
+                    <i id="fav-icon" class="far fa-heart"></i>
+                    {% endif %}
+                </button>
+                {% endif %}
+                <button onclick="shareProduct()" class="text-black text-xl">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="p-3 rounded-lg mb-4 text-center {% if category == 'success' %}bg-green-600{% else %}bg-red-600{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="bg-gray-800 rounded-2xl overflow-hidden shadow-2xl">
+            
+            <!-- عارض الصور والفيديوهات -->
+            <div class="relative">
+                {% if product.sold == 1 %}
+                <div class="absolute top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-full text-lg font-bold z-10">تم البيع</div>
+                {% endif %}
+                
+                {% if product.images %}
+                <div id="media-container" class="w-full h-96 bg-black flex items-center justify-center">
+                    {% set first_file = product.images[0] %}
+                    {% if first_file.endswith('.mp4') or first_file.endswith('.webm') or first_file.endswith('.mov') %}
+                    <video id="main-media" src="{{ url_for('uploaded_file', filename=first_file) }}" controls class="w-full h-full object-contain"></video>
+                    {% else %}
+                    <img id="main-media" src="{{ url_for('uploaded_file', filename=first_file) }}" class="w-full h-full object-contain cursor-pointer" alt="{{ product.title }}" onclick="openFullscreen()">
+                    {% endif %}
+                </div>
+                
+                {% if product.images|length > 1 %}
+                <button onclick="prevMedia()" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-60 text-yellow-500 w-10 h-10 rounded-full hover:bg-opacity-80 transition z-10">
+                    <i class="fas fa-chevron-right text-xl"></i>
+                </button>
+                <button onclick="nextMedia()" class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-60 text-yellow-500 w-10 h-10 rounded-full hover:bg-opacity-80 transition z-10">
+                    <i class="fas fa-chevron-left text-xl"></i>
+                </button>
+                {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- نقاط التنقل -->
+            {% if product.images|length > 1 %}
+            <div class="flex justify-center gap-2 py-3 bg-gray-850">
+                {% for i in range(product.images|length) %}
+                <span class="w-3 h-3 rounded-full cursor-pointer {% if loop.first %}bg-yellow-500{% else %}bg-gray-600{% endif %}" onclick="goToMedia({{ i }})" id="dot-{{ i }}"></span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- مصغرات الصور -->
+            {% if product.images|length > 1 %}
+            <div class="flex gap-2 p-3 overflow-x-auto bg-gray-850">
+                {% for file in product.images %}
+                <div class="w-20 h-20 flex-shrink-0 cursor-pointer border-2 {% if loop.first %}border-yellow-500{% else %}border-transparent{% endif %} rounded-lg overflow-hidden hover:border-yellow-400 transition" onclick="goToMedia({{ loop.index0 }})" id="thumb-{{ loop.index0 }}">
+                    {% if file.endswith('.mp4') or file.endswith('.webm') or file.endswith('.mov') %}
+                    <div class="w-full h-full bg-black flex items-center justify-center">
+                        <i class="fas fa-play text-yellow-500 text-2xl"></i>
+                    </div>
+                    {% else %}
+                    <img src="{{ url_for('uploaded_file', filename=file) }}" class="w-full h-full object-cover" alt="صورة">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- تفاصيل المنتج -->
+            <div class="p-8">
+                <h1 class="text-3xl font-bold text-yellow-500 mb-4">{{ product.title }}</h1>
+                <div class="flex flex-wrap items-center gap-4 mb-6">
+                    <span class="bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-lg">{{ product.price }} دج</span>
+                    <span class="text-gray-400"><i class="fas fa-map-marker-alt text-yellow-500 ml-1"></i> {{ product.city }}</span>
+                    <span class="text-gray-400"><i class="fas fa-tag text-yellow-500 ml-1"></i> {{ product.category }}</span>
+                    <span class="text-gray-400"><i class="fas fa-eye text-yellow-500 ml-1"></i> {{ product.views }} مشاهدة</span>
+                </div>
+
+                <!-- معلومات التوصيل -->
+                {% if product.delivery_available == 1 %}
+                <div class="bg-green-900 bg-opacity-40 border border-green-600 rounded-xl p-4 mb-6">
+                    <h3 class="text-green-400 font-bold mb-2"><i class="fas fa-truck ml-2"></i>التوصيل متوفر</h3>
+                    <div class="flex gap-4 text-sm text-gray-300">
+                        <span>داخل الولاية: <strong class="text-green-400">{{ product.delivery_price_inside }} دج</strong></span>
+                        <span>خارج الولاية: <strong class="text-green-400">{{ product.delivery_price_outside }} دج</strong></span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="border-t border-gray-700 pt-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4 text-yellow-500">الوصف</h2>
+                    <p class="text-gray-300 leading-relaxed">{{ product.description }}</p>
+                </div>
+
+                <div class="border-t border-gray-700 pt-6">
+                    <h2 class="text-xl font-semibold mb-4 text-yellow-500">معلومات الاتصال</h2>
+                    <div class="flex flex-wrap gap-4 mb-6">
+                        <a href="tel:{{ product.phone }}" class="flex-1 min-w-[150px] bg-green-600 text-center py-3 rounded-xl hover:bg-green-500 transition">
+                            <i class="fas fa-phone ml-2"></i>اتصال
+                        </a>
+                        <a href="https://wa.me/{{ product.phone }}" target="_blank" class="flex-1 min-w-[150px] bg-green-700 text-center py-3 rounded-xl hover:bg-green-600 transition">
+                            <i class="fab fa-whatsapp ml-2"></i>واتساب
+                        </a>
+                    </div>
+
+                    <!-- زر اطلب الآن -->
+                    {% if product.sold == 0 %}
+                    <button onclick="openOrderForm()" class="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 text-black py-4 rounded-xl font-bold text-lg hover:from-yellow-400 hover:to-yellow-300 transition mb-4">
+                        <i class="fas fa-shopping-cart ml-2"></i>اطلب الآن
+                    </button>
+                    {% endif %}
+
+                    <p class="text-center text-gray-500 mt-4 text-sm">تاريخ النشر: {{ product.date }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الطلب -->
+    <div id="order-modal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-yellow-500" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-yellow-500">تقديم طلب</h2>
+                <button onclick="closeOrderForm()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            
+            <form action="/order/{{ product.id }}" method="post" class="space-y-4" onsubmit="playNotificationSound()">
+                <div>
+                    <label class="block text-yellow-500 mb-2">الاسم الكامل *</label>
+                    <input type="text" name="buyer_name" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500" placeholder="أدخل اسمك">
+                </div>
+                <div>
+                    <label class="block text-yellow-500 mb-2">رقم الهاتف *</label>
+                    <input type="tel" name="buyer_phone" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500" placeholder="07XXXXXXXXX">
+                </div>
+                <div>
+                    <label class="block text-yellow-500 mb-2">العنوان الدقيق *</label>
+                    <textarea name="buyer_address" rows="2" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500" placeholder="الحي، الشارع، رقم المنزل"></textarea>
+                </div>
+                <div>
+                    <label class="block text-yellow-500 mb-2">البلدية *</label>
+                    <input type="text" name="buyer_city" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500" placeholder="أولاد جلال، بسكرة...">
+                </div>
+                
+                {% if product.delivery_available == 1 %}
+                <div>
+                    <label class="block text-yellow-500 mb-2">اختر التوصيل</label>
+                    <select name="delivery_price" class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-white">
+                        <option value="0">بدون توصيل</option>
+                        <option value="{{ product.delivery_price_inside }}">داخل الولاية (+{{ product.delivery_price_inside }} دج)</option>
+                        <option value="{{ product.delivery_price_outside }}">خارج الولاية (+{{ product.delivery_price_outside }} دج)</option>
+                    </select>
+                </div>
+                {% else %}
+                <input type="hidden" name="delivery_price" value="0">
+                {% endif %}
+                
+                <button type="submit" class="w-full bg-yellow-500 text-black py-3 rounded-lg font-bold text-lg hover:bg-yellow-400 transition">
+                    <i class="fas fa-check ml-2"></i>تأكيد الطلب
+                </button>
+            </form>
+            
+            <p class="text-center text-gray-500 text-xs mt-4">سيتم إرسال معلوماتك للبائع ليتواصل معك</p>
+        </div>
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <div class="fixed bottom-0 w-full bg-gray-800 border-t border-yellow-500 py-3 px-4 z-40">
+        <div class="flex justify-around text-center text-sm max-w-sm mx-auto">
+            <a href="/" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-home text-xl block"></i>
+                <span>الرئيسية</span>
+            </a>
+            <a href="/add" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-plus-circle text-xl block"></i>
+                <span>أضف إعلان</span>
+            </a>
+            {% if user_id > 0 %}
+            <a href="/favorites" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-heart text-xl block"></i>
+                <span>مفضلة</span>
+            </a>
+            <a href="/my_ads" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-user text-xl block"></i>
+                <span>إعلاناتي</span>
+            </a>
+            {% else %}
+            <a href="/login" class="text-gray-400 hover:text-yellow-500 transition">
+                <i class="fas fa-user text-xl block"></i>
+                <span>دخول</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- قانون الموقع -->
+    <div class="fixed bottom-16 w-full z-30">
+        <div class="bg-red-600 bg-opacity-90 text-white text-center py-2 text-sm px-4">
+            <i class="fas fa-exclamation-triangle ml-1"></i>
+            يمنع نهائياً نشر المخدرات والأسلحة وأي مواد غير قانونية
+        </div>
+    </div>
+
+    <!-- صوت الإشعار المخفي -->
+    <audio id="notif-sound" preload="auto">
+        <source src="https://www.soundjay.com/buttons/sounds/button-09.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const mediaFiles = {{ product.images | tojson | safe }};
+        let currentIndex = 0;
+
+        function updateMedia() {
+            const file = mediaFiles[currentIndex];
+            const container = document.getElementById('media-container');
+            const isVideo = file.endsWith('.mp4') || file.endsWith('.webm') || file.endsWith('.mov');
+            
+            let mediaHTML;
+            if (isVideo) {
+                mediaHTML = `<video src="/uploads/${file}" controls class="w-full h-full object-contain"></video>`;
+            } else {
+                mediaHTML = `<img src="/uploads/${file}" class="w-full h-full object-contain cursor-pointer" alt="صورة" onclick="openFullscreen()">`;
+            }
+            container.innerHTML = mediaHTML;
+
+            document.querySelectorAll('[id^="dot-"]').forEach(dot => { dot.classList.remove('bg-yellow-500'); dot.classList.add('bg-gray-600'); });
+            const activeDot = document.getElementById(`dot-${currentIndex}`);
+            if (activeDot) activeDot.classList.replace('bg-gray-600', 'bg-yellow-500');
+
+            document.querySelectorAll('[id^="thumb-"]').forEach(thumb => thumb.classList.remove('border-yellow-500'));
+            const activeThumb = document.getElementById(`thumb-${currentIndex}`);
+            if (activeThumb) activeThumb.classList.add('border-yellow-500');
+        }
+
+        function nextMedia() { currentIndex = (currentIndex + 1) % mediaFiles.length; updateMedia(); }
+        function prevMedia() { currentIndex = (currentIndex - 1 + mediaFiles.length) % mediaFiles.length; updateMedia(); }
+        function goToMedia(index) { currentIndex = index; updateMedia(); }
+
+        function openFullscreen() {
+            const file = mediaFiles[currentIndex];
+            const isVideo = file.endsWith('.mp4') || file.endsWith('.webm') || file.endsWith('.mov');
+            if (isVideo) return;
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center';
+            overlay.onclick = function() { overlay.remove(); };
+            const img = document.createElement('img');
+            img.src = '/uploads/' + file;
+            img.className = 'max-w-full max-h-full object-contain p-4';
+            overlay.appendChild(img);
+            document.body.appendChild(overlay);
+        }
+
+        // اللمس
+        let touchStartX = 0;
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('media-container');
+            if (container) {
+                container.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; });
+                container.addEventListener('touchend', function(e) {
+                    const diff = touchStartX - e.changedTouches[0].clientX;
+                    if (Math.abs(diff) > 50) { if (diff > 0) nextMedia(); else prevMedia(); }
+                });
+            }
+        });
+
+        // المفضلة
+        function toggleFavoritePage(productId) {
+            fetch('/toggle_favorite/' + productId)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('fav-icon').className = data.status === 'added' ? 'fas fa-heart text-red-600' : 'far fa-heart';
+                });
+        }
+
+        // المشاركة - مصلحة
+        function shareProduct() {
+            const url = window.location.href;
+            const text = '{{ product.title }} - {{ product.price }} دج - سوق أولاد جلال\n' + url;
+            
+            if (navigator.share) {
+                navigator.share({ title: '{{ product.title }}', text: text, url: url }).catch(() => {});
+            } else {
+                // fallback للواتساب
+                window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+            }
+        }
+
+        // نافذة الطلب
+        function openOrderForm() {
+            document.getElementById('order-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeOrderForm() {
+            document.getElementById('order-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // صوت الإشعار
+        function playNotificationSound() {
+            try {
+                const audio = document.getElementById('notif-sound');
+                audio.currentTime = 0;
+                audio.play();
+            } catch(e) {}
+        }
+
+        // غلق النافذة بالضغط خارجها
+        document.getElementById('order-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeOrderForm();
+        });
+    </script>
+
+    <div class="h-24"></div>
+</body>
+</html>

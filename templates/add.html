@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة إعلان - سوق أولاد جلال</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white">
+
+    <header class="bg-gradient-to-r from-yellow-600 to-yellow-400 py-4">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <a href="/" class="text-black font-bold text-xl"><i class="fas fa-arrow-right ml-2"></i>العودة</a>
+            <h1 class="text-2xl font-bold text-black">إضافة إعلان جديد</h1>
+            <div></div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <div class="bg-gray-800 rounded-2xl p-8 shadow-xl">
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                <div>
+                    <label class="block text-yellow-500 mb-2">عنوان الإعلان *</label>
+                    <input type="text" name="title" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500">
+                </div>
+                <div>
+                    <label class="block text-yellow-500 mb-2">الوصف *</label>
+                    <textarea name="description" rows="5" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500"></textarea>
+                </div>
+                <div>
+                    <label class="block text-yellow-500 mb-2">السعر (دج) *</label>
+                    <input type="text" name="price" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500">
+                </div>
+                <div>
+                    <label class="block text-yellow-500 mb-2">رقم الهاتف *</label>
+                    <input type="tel" name="phone" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500">
+                </div>
+                <div>
+                    <label class="block text-yellow-500 mb-2">القسم *</label>
+                    <select name="category" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600">
+                        <option value="سيارات">سيارات</option>
+                        <option value="عقارات">عقارات</option>
+                        <option value="هواتف">هواتف</option>
+                        <option value="خدمات">خدمات</option>
+                        <option value="ملابس">ملابس</option>
+                        <option value="أثاث">أثاث</option>
+                        <option value="مواشي">مواشي</option>
+                        <option value="أخرى">أخرى</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-yellow-500 mb-2">الولاية/المدينة *</label>
+                    <input type="text" name="city" required class="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500">
+                </div>
+                
+                <!-- خيار التوصيل -->
+                <div class="border border-yellow-600 rounded-xl p-4 bg-gray-750">
+                    <h3 class="text-yellow-500 font-bold mb-3"><i class="fas fa-truck ml-2"></i>خيار التوصيل</h3>
+                    <div class="flex items-center gap-4 mb-3">
+                        <label class="text-gray-300">التوصيل متوفر؟</label>
+                        <select name="delivery_available" id="delivery-select" class="px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white" onchange="toggleDelivery()">
+                            <option value="0">لا</option>
+                            <option value="1">نعم</option>
+                        </select>
+                    </div>
+                    <div id="delivery-prices" class="hidden space-y-3">
+                        <div>
+                            <label class="block text-gray-400 text-sm mb-1">سعر التوصيل داخل الولاية (دج)</label>
+                            <input type="number" name="delivery_price_inside" value="0" class="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-sm mb-1">سعر التوصيل خارج الولاية (دج)</label>
+                            <input type="number" name="delivery_price_outside" value="0" class="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:border-yellow-500">
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-yellow-500 mb-2">الصور والفيديوهات *</label>
+                    <input type="file" name="images" accept="image/*,video/*" multiple required class="w-full text-gray-400 p-2">
+                    <p class="text-gray-500 text-sm mt-1">يمكنك اختيار عدة ملفات (صور + فيديو)</p>
+                </div>
+                <button type="submit" class="w-full bg-yellow-500 text-black py-3 rounded-lg font-bold text-lg hover:bg-yellow-400 transition">نشر الإعلان</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleDelivery() {
+            const select = document.getElementById('delivery-select');
+            const prices = document.getElementById('delivery-prices');
+            if (select.value === '1') {
+                prices.classList.remove('hidden');
+            } else {
+                prices.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
