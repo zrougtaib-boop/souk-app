@@ -293,13 +293,13 @@
             if (isVideo) {
                 img.classList.add('hidden');
                 video.classList.remove('hidden');
-                video.src = '/uploads/' + file;
+                video.src = '' + file;
                 video.load();
             } else {
                 video.classList.add('hidden');
                 video.pause();
                 img.classList.remove('hidden');
-                img.src = '/uploads/' + file;
+                img.src = '' + file;
             }
             
             document.getElementById('lightbox-counter').textContent = (lightboxIndex + 1) + ' / ' + lightboxImages.length;

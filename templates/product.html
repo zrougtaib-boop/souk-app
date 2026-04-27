@@ -248,9 +248,9 @@
             
             let mediaHTML;
             if (isVideo) {
-                mediaHTML = `<video src="/uploads/${file}" controls class="w-full h-full object-contain"></video>`;
+                mediaHTML = `<video src="${file}" controls class="w-full h-full object-contain"></video>`;
             } else {
-                mediaHTML = `<img src="/uploads/${file}" class="w-full h-full object-contain cursor-pointer" alt="صورة" onclick="openFullscreen()">`;
+                mediaHTML = `<img src="${file}" class="w-full h-full object-contain cursor-pointer" alt="صورة" onclick="openFullscreen()">`;
             }
             container.innerHTML = mediaHTML;
 
@@ -276,7 +276,7 @@
             overlay.className = 'fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center';
             overlay.onclick = function() { overlay.remove(); };
             const img = document.createElement('img');
-            img.src = '/uploads/' + file;
+            img.src = '' + file;
             img.className = 'max-w-full max-h-full object-contain p-4';
             overlay.appendChild(img);
             document.body.appendChild(overlay);
