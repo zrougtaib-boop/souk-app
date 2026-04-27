@@ -288,7 +288,6 @@ def search():
     conn.close()
     return render_template('index.html', products=products_list, user_id=user_id,
                            search_query=q, city_filter=city_filter, sort=sort)
-
 # ========== نظام الطلبات ==========
 @app.route('/order/<int:product_id>', methods=['POST'])
 def place_order(product_id):
